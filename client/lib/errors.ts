@@ -20,7 +20,45 @@ import { NextResponse } from 'next/server';
  * TODO (A3): map known error types to proper status codes (400, 404, 409, ...)
  * TODO (A3): avoid leaking internal error details in responses
  */
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(message: string = 'Not found') {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
+
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConflictError';
+  }
+}
+
 export function handleError(err: unknown): NextResponse {
+  if (err instanceof ValidationError) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
+
+  if (err instanceof NotFoundError) {
+    return NextResponse.json({ error: err.message }, { status: 404 });
+  }
+
+  if (err instanceof ConflictError) {
+    return NextResponse.json({ error: err.message }, { status: 409 });
+  }
+
+  // A malformed JSON body throws a native SyntaxError from req.json().
+  if (err instanceof SyntaxError) {
+    return NextResponse.json({ error: 'Malformed JSON body' }, { status: 400 });
+  }
+  
   console.error('Unhandled API error:', err);
 
   return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
